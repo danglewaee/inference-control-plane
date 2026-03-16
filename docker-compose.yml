@@ -1,0 +1,87 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
+  model-seed:
+    build: .
+    working_dir: /app
+    command: ["python", "scripts/seed_demo.py", "--ollama-url", "http://ollama:11434", "--config", "/app/config/backends.demo.json", "--warmup"]
+    volumes:
+      - ./:/app
+      - control-plane-data:/data
+    depends_on:
+      - ollama
+    restart: "no"
+
+  control-plane:
+    build: .
+    working_dir: /app
+    command: ["uvicorn", "control_plane.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      BACKENDS_CONFIG_PATH: /app/config/backends.demo.json
+      CONTROL_PLANE_DB_PATH: /data/control_plane.db
+      DEFAULT_POLICY: slo_aware
+    volumes:
+      - ./:/app
+      - control-plane-data:/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      ollama:
+        condition: service_started
+      model-seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  prometheus:
+    image: prom/prometheus:latest
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+    volumes:
+      - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      control-plane:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:12.4.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/provisioning/dashboards/json/inference-control-plane.json
+    volumes:
+      - ./ops/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./ops/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./ops/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+
+  demo-suite:
+    build: .
+    working_dir: /app
+    command: ["python", "scripts/run_demo_suite.py", "--policy", "slo_aware", "--requests", "12", "--concurrency", "3"]
+    environment:
+      CONTROL_PLANE_URL: http://control-plane:8000
+    volumes:
+      - ./:/app
+      - control-plane-data:/data
+    depends_on:
+      control-plane:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  ollama-data:
+  control-plane-data:

@@ -1,0 +1,12 @@
+.venv/
+.pdfenv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+logs/
+benchmarks/*.json
+Thumbs.db
+.DS_Store

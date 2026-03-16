@@ -1,0 +1,41 @@
+[
+  {
+    "name": "qwen-edge",
+    "url": "http://ollama:11434",
+    "provider": "ollama",
+    "model_name": "qwen2.5:0.5b",
+    "cost_weight": 0.8,
+    "max_concurrency": 4,
+    "warm_latency_ms": 450.0,
+    "system_prompt": "You are a concise assistant for latency-sensitive tasks. Answer in one or two short sentences.",
+    "temperature": 0.2,
+    "max_tokens": 72,
+    "timeout_s": 45.0
+  },
+  {
+    "name": "llama-balanced",
+    "url": "http://ollama:11434",
+    "provider": "ollama",
+    "model_name": "llama3.2:1b",
+    "cost_weight": 1.1,
+    "max_concurrency": 3,
+    "warm_latency_ms": 700.0,
+    "system_prompt": "You are a balanced assistant. Prefer short, accurate answers with minimal filler.",
+    "temperature": 0.2,
+    "max_tokens": 96,
+    "timeout_s": 60.0
+  },
+  {
+    "name": "qwen-quality",
+    "url": "http://ollama:11434",
+    "provider": "ollama",
+    "model_name": "qwen2.5:1.5b",
+    "cost_weight": 1.7,
+    "max_concurrency": 2,
+    "warm_latency_ms": 1100.0,
+    "system_prompt": "You are a higher-quality assistant. Keep answers direct but a bit more complete when the request needs context.",
+    "temperature": 0.15,
+    "max_tokens": 128,
+    "timeout_s": 75.0
+  }
+]
