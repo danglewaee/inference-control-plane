@@ -16,11 +16,13 @@
     <div class="page-shell">
       <header class="topbar">
         <div class="brand-block">
-          <p class="eyebrow">Live AI routing demo</p>
+          <p class="eyebrow">Self-hosted AI reliability demo</p>
           <h1>Inference Control Plane</h1>
           <p class="lede">
-            Ask a question, watch the platform choose a model, and see how the stack
-            behaves when traffic, latency, and fallback decisions change.
+            When a self-hosted AI app sends every request to one model, users end up
+            waiting longer, hitting timeouts, or seeing failures whenever that model
+            slows down. This control plane routes traffic across multiple Ollama
+            models, falls back automatically, and makes every routing decision visible.
           </p>
         </div>
         <div class="topbar-links">
@@ -30,12 +32,42 @@
         </div>
       </header>
 
+      <section class="story-strip" aria-label="Project summary">
+        <article class="story-card">
+          <p class="section-label">Concrete problem</p>
+          <h2>One slow model can drag down the whole AI app.</h2>
+          <p>
+            In a support bot, internal assistant, or chat product, simple prompts often
+            get sent to the wrong model. That wastes compute, increases latency, and
+            creates a single point of failure.
+          </p>
+        </article>
+        <article class="story-card">
+          <p class="section-label">Why users care</p>
+          <h2>People feel it as lag, retries, and broken trust.</h2>
+          <p>
+            If the serving model gets overloaded or unhealthy, the end user sees slow
+            answers, more errors, and unpredictable behavior right when they expect a
+            chat response to feel instant.
+          </p>
+        </article>
+        <article class="story-card">
+          <p class="section-label">What this system does</p>
+          <h2>It acts like a traffic controller for local LLMs.</h2>
+          <p>
+            The platform selects the best backend for each request, falls back when a
+            model fails, supports canary rollouts, and exposes metrics so backend and
+            platform teams can operate the service safely.
+          </p>
+        </article>
+      </section>
+
       <main class="dashboard">
         <section class="panel panel-chat">
           <div class="panel-head">
             <div>
-              <p class="section-label">Ask the stack</p>
-              <h2>Send a live inference request</h2>
+              <p class="section-label">See the routing live</p>
+              <h2>Send a request and watch which model wins</h2>
             </div>
             <span id="health-badge" class="badge badge-neutral">Checking health</span>
           </div>
@@ -60,7 +92,7 @@
                 name="input"
                 rows="6"
                 maxlength="4000"
-                placeholder="Ask the assistant something that lets you see routing, latency, and fallback behavior."
+                placeholder="Try a realistic product question and inspect how the control plane routes it."
                 required
               ></textarea>
             </label>
@@ -118,15 +150,15 @@
               </div>
               <div id="response-meta" class="response-meta"></div>
             </div>
-            <pre id="response-body" class="response-body">Submit a prompt to see the chosen backend, latency, and output here.</pre>
+            <pre id="response-body" class="response-body">Submit a prompt to see the chosen backend, latency, fallback behavior, and final output here.</pre>
           </section>
         </section>
 
         <aside class="panel panel-insights">
           <div class="panel-head">
             <div>
-              <p class="section-label">Live system view</p>
-              <h2>What the platform is doing now</h2>
+              <p class="section-label">Live operating view</p>
+              <h2>Why the app stays stable under load</h2>
             </div>
             <button id="refresh-button" class="ghost-button" type="button">Refresh</button>
           </div>

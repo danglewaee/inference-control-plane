@@ -2,6 +2,13 @@
 
 A persistence-backed inference control plane that routes requests across real Ollama models under latency, cost, and health constraints.
 
+## Concrete problem solved
+- In a self-hosted AI app, sending every request to one model creates a single point of failure.
+- When that model gets slow or unhealthy, end users feel it as lag, retries, timeouts, and unstable responses.
+- Teams also struggle to test new models safely because a bad rollout can degrade the entire app at once.
+
+This project adds a control plane in front of multiple Ollama models so requests can be routed to the best backend, retried through a fallback path, and rolled out safely with metrics and rollback visibility.
+
 ## What this demo includes
 - Real model-server integration via `Ollama` instead of mock backends
 - Persistent backend registry, rollout state, request history, and decision logs in SQLite
