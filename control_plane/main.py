@@ -93,6 +93,13 @@ def home():
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
+@app.get("/about", include_in_schema=False)
+def about():
+    if not FRONTEND_DIR.exists():
+        raise HTTPException(status_code=404, detail="frontend not available")
+    return FileResponse(FRONTEND_DIR / "about.html")
+
+
 @app.get("/health")
 def health():
     return {

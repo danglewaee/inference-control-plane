@@ -26,40 +26,23 @@
           </p>
         </div>
         <div class="topbar-links">
+          <a href="/about">Why this project exists</a>
           <a href="/docs" target="_blank" rel="noreferrer">API Docs</a>
           <a href="http://localhost:3000" target="_blank" rel="noreferrer">Grafana</a>
           <a href="http://localhost:9090" target="_blank" rel="noreferrer">Prometheus</a>
         </div>
       </header>
 
-      <section class="story-strip" aria-label="Project summary">
-        <article class="story-card">
-          <p class="section-label">Concrete problem</p>
-          <h2>One slow model can drag down the whole AI app.</h2>
+      <section class="story-cta" aria-label="Project summary link">
+        <div>
+          <p class="section-label">Problem in one line</p>
+          <h2>Self-hosted AI apps become slow and fragile when every request depends on one model.</h2>
           <p>
-            In a support bot, internal assistant, or chat product, simple prompts often
-            get sent to the wrong model. That wastes compute, increases latency, and
-            creates a single point of failure.
+            This demo shows the routing layer that keeps the app responsive when latency,
+            overload, or rollout risk starts to hurt users.
           </p>
-        </article>
-        <article class="story-card">
-          <p class="section-label">Why users care</p>
-          <h2>People feel it as lag, retries, and broken trust.</h2>
-          <p>
-            If the serving model gets overloaded or unhealthy, the end user sees slow
-            answers, more errors, and unpredictable behavior right when they expect a
-            chat response to feel instant.
-          </p>
-        </article>
-        <article class="story-card">
-          <p class="section-label">What this system does</p>
-          <h2>It acts like a traffic controller for local LLMs.</h2>
-          <p>
-            The platform selects the best backend for each request, falls back when a
-            model fails, supports canary rollouts, and exposes metrics so backend and
-            platform teams can operate the service safely.
-          </p>
-        </article>
+        </div>
+        <a class="cta-link" href="/about">Read the full problem breakdown</a>
       </section>
 
       <main class="dashboard">

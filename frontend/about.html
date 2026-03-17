@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Why This Project Exists</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <p class="eyebrow">Project rationale</p>
+          <h1>Why This Control Plane Exists</h1>
+          <p class="lede">
+            This page explains the concrete product failure mode the project targets,
+            what users feel when the system degrades, and why a routing layer is more
+            useful here than calling a single model directly.
+          </p>
+        </div>
+        <div class="topbar-links">
+          <a href="/">Back to live demo</a>
+          <a href="/docs" target="_blank" rel="noreferrer">API Docs</a>
+          <a href="http://localhost:3000" target="_blank" rel="noreferrer">Grafana</a>
+        </div>
+      </header>
+
+      <main class="about-layout">
+        <section class="panel about-panel">
+          <p class="section-label">Concrete problem</p>
+          <h2>One overloaded model can make an AI product feel broken even when the rest of the stack is fine.</h2>
+          <p>
+            Many self-hosted AI apps start by routing every request to one local model.
+            That works until traffic grows, prompts vary in complexity, or a new model
+            rollout behaves worse than expected. At that point the application still
+            "works", but the user experience drops hard.
+          </p>
+          <div class="story-strip">
+            <article class="story-card">
+              <p class="section-label">Latency problem</p>
+              <h3>Simple prompts still hit heavy models.</h3>
+              <p>
+                The result is slower responses and wasted compute for routine requests
+                that could have been served by a lighter model.
+              </p>
+            </article>
+            <article class="story-card">
+              <p class="section-label">Reliability problem</p>
+              <h3>The app inherits one model's failure mode.</h3>
+              <p>
+                If that backend is overloaded, unhealthy, or times out, users feel it as
+                retries, lag, or total request failure.
+              </p>
+            </article>
+            <article class="story-card">
+              <p class="section-label">Rollout problem</p>
+              <h3>Testing a new model becomes risky.</h3>
+              <p>
+                Without canary logic and rollback signals, a bad model update degrades
+                the whole product at once instead of a controlled slice of traffic.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel about-panel">
+          <p class="section-label">Who feels the pain</p>
+          <h2>The end user sees lag. The platform team sees chaos.</h2>
+          <div class="about-columns">
+            <article class="mini-panel">
+              <h3>End users</h3>
+              <ul class="clean-list">
+                <li>Chat answers take too long.</li>
+                <li>They retry requests because the app feels stuck.</li>
+                <li>Trust drops because responses become inconsistent.</li>
+              </ul>
+            </article>
+            <article class="mini-panel">
+              <h3>Backend or platform teams</h3>
+              <ul class="clean-list">
+                <li>Hard to know which model is causing the slowdown.</li>
+                <li>No safe path to trial a new model version.</li>
+                <li>Cost and latency tradeoffs stay manual and fragile.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel about-panel">
+          <p class="section-label">Why this approach</p>
+          <h2>A control plane is useful when the app needs policy, fallback, and visibility, not just a single inference endpoint.</h2>
+          <div class="about-columns">
+            <article class="mini-panel">
+              <h3>Calling one model directly</h3>
+              <ul class="clean-list">
+                <li>Simpler to start.</li>
+                <li>Creates one obvious bottleneck.</li>
+                <li>Provides no built-in fallback or rollout safety.</li>
+              </ul>
+            </article>
+            <article class="mini-panel">
+              <h3>Using this control plane</h3>
+              <ul class="clean-list">
+                <li>Chooses a backend by latency, cost, and health.</li>
+                <li>Falls back when a model fails or saturates.</li>
+                <li>Tracks history, metrics, and canary rollback signals.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel about-panel about-footer">
+          <p class="section-label">Short recruiter version</p>
+          <h2>It is a traffic controller for self-hosted LLMs.</h2>
+          <p>
+            Instead of letting an AI product depend on one local model, this system routes
+            requests across multiple Ollama backends, retries through fallback paths, and
+            exposes the operational signals needed to keep user-facing latency and failures
+            under control.
+          </p>
+          <div class="topbar-links">
+            <a href="/">Open live demo</a>
+            <a href="/docs" target="_blank" rel="noreferrer">Inspect API</a>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
