@@ -9,20 +9,27 @@ A persistence-backed inference control plane that routes requests across real Ol
 - Queue-aware admission control, fallback routing, canary rollout, rollback guardrails
 - Prometheus metrics + provisioned Grafana dashboard
 - Chaos demo and before/after benchmark report generator
-- `docker compose up --build` one-command stack startup
+- `docker compose up --build -d` core stack startup
+- `docker compose --profile demo up --build` full benchmark demo
 
-## One-command demo
+## Core stack
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 What happens on first boot:
 - `ollama` starts
 - `model-seed` pulls and warms the demo models from `config/backends.demo.json`
 - `control-plane`, `prometheus`, and `grafana` start
-- `demo-suite` runs a baseline benchmark, injects chaos, runs an after benchmark, and writes `docs/demo-report.md`
 
 The first boot can take a while because Ollama needs to download models.
+
+## Full demo run
+```bash
+docker compose --profile demo up --build
+```
+
+The `demo-suite` profile runs a baseline benchmark, injects chaos, runs an after benchmark, and writes `docs/demo-report.md`.
 
 ## URLs
 - Control plane: [http://localhost:8000](http://localhost:8000)
@@ -50,6 +57,7 @@ python scripts/run_demo_suite.py --policy slo_aware --requests 12 --concurrency 
 ```bash
 python -m unittest discover -s tests -v
 python -m compileall control_plane benchmarks loadgen scripts tests
+docker compose config
 ```
 
 ## Demo architecture

@@ -1,10 +1,17 @@
 services:
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama@sha256:e23e6499890325d31f3454cdc83f7a613a2423c8a9e167bbafea0b0e3c27d7c6
     ports:
       - "11434:11434"
     volumes:
       - ollama-data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/bin/ollama", "list"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 20s
 
   model-seed:
     build: .
@@ -14,7 +21,8 @@ services:
       - ./:/app
       - control-plane-data:/data
     depends_on:
-      - ollama
+      ollama:
+        condition: service_healthy
     restart: "no"
 
   control-plane:
@@ -31,8 +39,6 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      ollama:
-        condition: service_started
       model-seed:
         condition: service_completed_successfully
     healthcheck:
@@ -40,9 +46,10 @@ services:
       interval: 15s
       timeout: 10s
       retries: 20
+    restart: unless-stopped
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus@sha256:4a61322ac1103a0e3aea2a61ef1718422a48fa046441f299d71e660a3bc71ae9
     command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
     volumes:
       - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -51,13 +58,14 @@ services:
     depends_on:
       control-plane:
         condition: service_healthy
+    restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:12.4.0
+    image: grafana/grafana@sha256:b0ae311af06228bcfd4a620504b653db80f5b91e94dc3dc2a5b7dab202bcde20
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/provisioning/dashboards/json/inference-control-plane.json
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/inference-control-plane.json
     volumes:
       - ./ops/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./ops/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
@@ -67,11 +75,14 @@ services:
     depends_on:
       prometheus:
         condition: service_started
+    restart: unless-stopped
 
   demo-suite:
     build: .
     working_dir: /app
     command: ["python", "scripts/run_demo_suite.py", "--policy", "slo_aware", "--requests", "12", "--concurrency", "3"]
+    profiles:
+      - demo
     environment:
       CONTROL_PLANE_URL: http://control-plane:8000
     volumes:

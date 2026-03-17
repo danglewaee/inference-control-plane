@@ -21,3 +21,28 @@ jobs:
         run: python -m compileall control_plane benchmarks loadgen scripts tests
       - name: Validate Docker Compose
         run: docker compose config > /dev/null
+      - name: Smoke test containerized stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose up -d --build --no-deps control-plane prometheus grafana
+
+          wait_for_http() {
+            local url="$1"
+            local attempts="${2:-60}"
+            for _ in $(seq 1 "$attempts"); do
+              if curl -fsS "$url" > /dev/null; then
+                return 0
+              fi
+              sleep 2
+            done
+            echo "Timed out waiting for $url" >&2
+            return 1
+          }
+
+          wait_for_http http://127.0.0.1:8000/health
+          wait_for_http http://127.0.0.1:9090/-/ready
+          wait_for_http http://127.0.0.1:3000/login
+      - name: Tear down smoke test stack
+        if: always()
+        run: docker compose down -v
