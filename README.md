@@ -32,7 +32,8 @@ docker compose --profile demo up --build
 The `demo-suite` profile runs a baseline benchmark, injects chaos, runs an after benchmark, and writes `docs/demo-report.md`.
 
 ## URLs
-- Control plane: [http://localhost:8000](http://localhost:8000)
+- Web app: [http://localhost:8000](http://localhost:8000)
+- API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Prometheus: [http://localhost:9090](http://localhost:9090)
 - Grafana: [http://localhost:3000](http://localhost:3000) (`admin` / `admin`)
 

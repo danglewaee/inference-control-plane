@@ -8,6 +8,8 @@ from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from control_plane.metrics import MetricsTracker
 from control_plane.registry import BackendRegistry
@@ -27,12 +29,16 @@ from control_plane.schemas import (
 from control_plane.storage import PersistenceStore
 
 app = FastAPI(title="Inference Control Plane", version="1.0.0")
+FRONTEND_DIR = Path(__file__).resolve().parents[1] / "frontend"
 registry = BackendRegistry()
 metrics = MetricsTracker()
 storage: PersistenceStore | None = None
 router: Router | None = None
 ROLLOUT_MIN_SAMPLES = max(1, int(os.getenv("ROLLOUT_MIN_SAMPLES", "5")))
 rollout_state = {"baseline": None, "canary": None, "traffic_percent": 0}
+
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 
 @app.on_event("startup")
@@ -78,6 +84,13 @@ async def shutdown() -> None:
         await client.aclose()
     if storage is not None:
         storage.close()
+
+
+@app.get("/", include_in_schema=False)
+def home():
+    if not FRONTEND_DIR.exists():
+        raise HTTPException(status_code=404, detail="frontend not available")
+    return FileResponse(FRONTEND_DIR / "index.html")
 
 
 @app.get("/health")

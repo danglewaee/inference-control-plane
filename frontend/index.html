@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inference Control Plane</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <p class="eyebrow">Live AI routing demo</p>
+          <h1>Inference Control Plane</h1>
+          <p class="lede">
+            Ask a question, watch the platform choose a model, and see how the stack
+            behaves when traffic, latency, and fallback decisions change.
+          </p>
+        </div>
+        <div class="topbar-links">
+          <a href="/docs" target="_blank" rel="noreferrer">API Docs</a>
+          <a href="http://localhost:3000" target="_blank" rel="noreferrer">Grafana</a>
+          <a href="http://localhost:9090" target="_blank" rel="noreferrer">Prometheus</a>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="panel panel-chat">
+          <div class="panel-head">
+            <div>
+              <p class="section-label">Ask the stack</p>
+              <h2>Send a live inference request</h2>
+            </div>
+            <span id="health-badge" class="badge badge-neutral">Checking health</span>
+          </div>
+
+          <div class="prompt-presets">
+            <button type="button" class="preset-chip" data-prompt="Summarize why fallback routing matters for a production AI service.">
+              Fallback routing
+            </button>
+            <button type="button" class="preset-chip" data-prompt="Explain canary rollouts in plain English with one practical example.">
+              Canary rollout
+            </button>
+            <button type="button" class="preset-chip" data-prompt="Give a concise note on how latency and cost trade off in self-hosted AI systems.">
+              Latency vs cost
+            </button>
+          </div>
+
+          <form id="infer-form" class="composer">
+            <label class="input-block">
+              <span>Your prompt</span>
+              <textarea
+                id="prompt-input"
+                name="input"
+                rows="6"
+                maxlength="4000"
+                placeholder="Ask the assistant something that lets you see routing, latency, and fallback behavior."
+                required
+              ></textarea>
+            </label>
+
+            <div class="control-grid">
+              <label class="input-block">
+                <span>Priority</span>
+                <select id="priority-select" name="priority">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
+
+              <label class="input-block">
+                <span>Routing policy</span>
+                <select id="policy-select" name="policy">
+                  <option value="">Service default (SLO aware)</option>
+                  <option value="slo_aware">SLO aware</option>
+                  <option value="latency_aware">Latency aware</option>
+                  <option value="cost_aware">Cost aware</option>
+                  <option value="round_robin">Round robin</option>
+                </select>
+              </label>
+
+              <label class="input-block">
+                <span>Preferred backend</span>
+                <select id="backend-select" name="preferred_backend">
+                  <option value="">Automatic</option>
+                </select>
+              </label>
+
+              <label class="input-block">
+                <span>Latency budget (ms)</span>
+                <input id="latency-input" name="latency_budget_ms" type="number" min="1" max="60000" value="2500" />
+              </label>
+
+              <label class="input-block">
+                <span>Max tokens</span>
+                <input id="tokens-input" name="max_tokens" type="number" min="1" max="1024" value="96" />
+              </label>
+            </div>
+
+            <div class="composer-actions">
+              <button id="submit-button" type="submit">Run inference</button>
+              <p id="request-status" class="request-status">Ready to send a request.</p>
+            </div>
+          </form>
+
+          <section class="response-card">
+            <div class="response-head">
+              <div>
+                <p class="section-label">Latest response</p>
+                <h3 id="response-title">No request yet</h3>
+              </div>
+              <div id="response-meta" class="response-meta"></div>
+            </div>
+            <pre id="response-body" class="response-body">Submit a prompt to see the chosen backend, latency, and output here.</pre>
+          </section>
+        </section>
+
+        <aside class="panel panel-insights">
+          <div class="panel-head">
+            <div>
+              <p class="section-label">Live system view</p>
+              <h2>What the platform is doing now</h2>
+            </div>
+            <button id="refresh-button" class="ghost-button" type="button">Refresh</button>
+          </div>
+
+          <div class="metrics-grid" id="metrics-grid">
+            <article class="metric-card">
+              <span>Total requests</span>
+              <strong id="requests-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Fallbacks</span>
+              <strong id="fallback-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Rejected</span>
+              <strong id="rejected-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Rollbacks</span>
+              <strong id="rollback-total">-</strong>
+            </article>
+          </div>
+
+          <section class="mini-panel">
+            <div class="mini-panel-head">
+              <h3>Backends</h3>
+              <span id="backend-count" class="mini-note">0 live</span>
+            </div>
+            <div id="backend-list" class="backend-list"></div>
+          </section>
+
+          <section class="mini-panel">
+            <div class="mini-panel-head">
+              <h3>Recent request history</h3>
+              <span class="mini-note">Latest 6 events</span>
+            </div>
+            <div id="history-list" class="history-list"></div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
