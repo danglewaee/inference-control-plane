@@ -29,6 +29,10 @@ body {
     linear-gradient(180deg, #fcf7ed 0%, #efe4d2 100%);
 }
 
+body.gallery-page {
+  overflow: hidden;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -57,6 +61,11 @@ textarea {
   max-width: 1440px;
   margin: 0 auto;
   padding: 2rem;
+}
+
+.gallery-shell {
+  max-width: 1560px;
+  padding: 1.4rem 1.6rem;
 }
 
 .topbar {
@@ -129,6 +138,10 @@ textarea {
   display: grid;
   grid-template-columns: 1.35fr 0.95fr;
   gap: 1.4rem;
+}
+
+.dashboard-compact {
+  grid-template-columns: 1.28fr 0.72fr;
 }
 
 .story-cta {
@@ -204,6 +217,56 @@ textarea {
 .about-layout {
   display: grid;
   gap: 1.4rem;
+}
+
+.ops-layout {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.ops-panel {
+  padding: 1.35rem;
+}
+
+.ops-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.link-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.nav-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.05rem 1.1rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(24, 33, 38, 0.08);
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.nav-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(24, 33, 38, 0.18);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.nav-card h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.nav-card p:last-child {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .about-panel {
@@ -516,10 +579,181 @@ textarea {
   color: var(--muted);
 }
 
+.gallery-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
+}
+
+.gallery-cover-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.gallery-cover-brand h1,
+.gallery-live-panel h2,
+.gallery-backends-panel h2 {
+  margin: 0.3rem 0 0;
+  line-height: 0.96;
+  letter-spacing: -0.05em;
+}
+
+.gallery-cover-brand h1 {
+  font-size: clamp(2.7rem, 5.8vw, 4.8rem);
+}
+
+.gallery-cover-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gallery-cover-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1.42fr 0.92fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.gallery-cover-grid-compact {
+  grid-template-columns: 1.48fr 0.72fr;
+}
+
+.gallery-live-panel,
+.gallery-backends-panel {
+  padding: 1.05rem;
+}
+
+.gallery-live-panel {
+  align-self: start;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.gallery-panel-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.gallery-live-panel h2,
+.gallery-backends-panel h2 {
+  font-size: clamp(1.4rem, 2vw, 1.9rem);
+}
+
+.gallery-rail {
+  align-self: start;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
+}
+
+.gallery-access-panel {
+  align-self: start;
+  padding: 1.05rem;
+}
+
+.nav-card-compact h3 {
+  font-size: 1.15rem;
+}
+
+.nav-card-compact p:last-child {
+  font-size: 0.95rem;
+}
+
+.gallery-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.gallery-metric-card strong {
+  font-size: clamp(1.65rem, 2.8vw, 2.5rem);
+}
+
+.gallery-response-wrap {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 0.7rem;
+}
+
+#gallery-run {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #d35f2d 0%, #e98749 100%);
+  color: #fff;
+  padding: 0.85rem 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 16px 28px rgba(211, 95, 45, 0.24);
+}
+
+#gallery-run:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
+.gallery-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.gallery-response-body {
+  margin-top: 0;
+  min-height: 250px;
+  max-height: 310px;
+  height: auto;
+  padding: 1.1rem;
+  font-size: 0.98rem;
+  overflow-y: auto;
+}
+
+.gallery-backend-list {
+  margin-top: 0;
+}
+
+.gallery-backends-panel {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.8rem;
+}
+
+.gallery-backends-panel .backend-card {
+  padding: 0.8rem;
+}
+
 @media (max-width: 1100px) {
   .story-strip,
   .dashboard {
     grid-template-columns: 1fr;
+  }
+
+  .gallery-cover-grid,
+  .gallery-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  body.gallery-page {
+    overflow: auto;
+  }
+
+  .gallery-cover-top,
+  .gallery-panel-bar,
+  .ops-toolbar {
+    flex-direction: column;
   }
 
   .story-cta {

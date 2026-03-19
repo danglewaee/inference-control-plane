@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inference Control Plane Gallery Cover</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body class="gallery-page">
+    <div class="page-shell gallery-shell">
+      <header class="gallery-cover-top">
+        <div class="gallery-cover-brand">
+          <h1>Inference Control Plane</h1>
+        </div>
+        <div class="gallery-cover-actions">
+          <span id="gallery-health" class="badge badge-neutral">Checking health</span>
+          <button id="gallery-run" type="button">Refresh sample</button>
+        </div>
+      </header>
+
+      <section class="gallery-cover-grid gallery-cover-grid-compact">
+        <article class="panel gallery-live-panel">
+          <div class="gallery-panel-bar">
+            <div>
+              <p class="section-label">Live route</p>
+              <h2 id="gallery-response-title">Preparing sample</h2>
+            </div>
+            <div id="gallery-response-meta" class="response-meta"></div>
+          </div>
+
+          <div class="gallery-response-wrap">
+            <p id="gallery-status" class="gallery-status">Preparing live sample...</p>
+            <pre id="gallery-response-body" class="response-body gallery-response-body">Waiting for live output.</pre>
+          </div>
+        </article>
+
+        <aside class="panel gallery-access-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-label">Operator views</p>
+              <h2>Open technical detail only when you need it</h2>
+            </div>
+          </div>
+
+          <div class="link-stack">
+            <a class="nav-card nav-card-compact" href="/ops/metrics">
+              <p class="section-label">Metrics</p>
+              <h3>Metrics and history</h3>
+              <p>Request totals, fallbacks, rollbacks, and recent routing events.</p>
+            </a>
+            <a class="nav-card nav-card-compact" href="/ops/backends">
+              <p class="section-label">Backends</p>
+              <h3>Backend pool and health</h3>
+              <p>Model availability, p95 latency, queue depth, and degradation state.</p>
+            </a>
+            <a class="nav-card nav-card-compact" href="/" target="_self">
+              <p class="section-label">Demo</p>
+              <h3>Return to the main live demo</h3>
+              <p>Use the full prompt workflow without exposing backend internals by default.</p>
+            </a>
+          </div>
+        </aside>
+      </section>
+    </div>
+
+    <script src="/static/gallery.js"></script>
+  </body>
+</html>

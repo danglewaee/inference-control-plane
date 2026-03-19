@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inference Control Plane Backends</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <p class="eyebrow">Operator backends</p>
+          <h1>Backend Pool</h1>
+          <p class="lede">
+            This page isolates the model inventory from the main UI. Use it to inspect
+            which backends are healthy, how much concurrency they expose, and how their
+            latency profile is evolving.
+          </p>
+        </div>
+        <div class="topbar-links">
+          <a href="/">Live demo</a>
+          <a href="/gallery">Gallery cover</a>
+          <a href="/ops/metrics">Metrics view</a>
+          <a href="/docs" target="_blank" rel="noreferrer">API Docs</a>
+          <a href="http://localhost:3000" target="_blank" rel="noreferrer">Grafana</a>
+        </div>
+      </header>
+
+      <main class="ops-layout">
+        <section class="panel ops-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-label">Backend summary</p>
+              <h2>Live model availability and health</h2>
+            </div>
+            <div class="ops-toolbar">
+              <span id="backends-health-badge" class="badge badge-neutral">Checking health</span>
+              <button id="backends-refresh-button" class="ghost-button" type="button">Refresh</button>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <article class="metric-card">
+              <span>Online</span>
+              <strong id="backends-online-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Healthy</span>
+              <strong id="backends-healthy-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Degraded</span>
+              <strong id="backends-degraded-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Peak queue</span>
+              <strong id="backends-queue-peak">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Loaded</span>
+              <strong id="backends-loaded-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Autoscale events</span>
+              <strong id="backends-autoscale-total">-</strong>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel ops-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-label">Backend pool</p>
+              <h2>All configured routing targets</h2>
+            </div>
+          </div>
+
+          <div id="backends-list" class="backend-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/backends.js"></script>
+  </body>
+</html>

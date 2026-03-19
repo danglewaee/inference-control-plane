@@ -90,12 +90,59 @@ class Router:
                 rejection_reason="no_healthy_backends",
             )
 
-        queued = not self.registry.reserve(chosen_backend)
+        admission = self.registry.admit(chosen_backend, priority=request.priority, allow_queue=True)
+        queued = admission == "queued"
         self._refresh_backend_metrics()
+        if admission == "shed":
+            self.metrics.record_load_shed(backend=chosen_backend, priority=request.priority, reason="capacity")
+            self._log_decision(request_id, "load_shed", chosen_backend, {"priority": request.priority})
+            fallback = choose_fallback(
+                failed_backend=chosen_backend,
+                priority=request.priority,
+                latency_budget_ms=request.latency_budget_ms,
+                registry=self.registry,
+            )
+            if not fallback:
+                return self._reject(
+                    request_id=request_id,
+                    request=request,
+                    policy=policy,
+                    backend=chosen_backend,
+                    chosen_backend=chosen_backend,
+                    final_backend=chosen_backend,
+                    queued=False,
+                    fallback_used=False,
+                    status="rejected",
+                    reason="load shed",
+                    rejection_reason="load_shed",
+                )
+            fallback_used = True
+            self.metrics.record_fallback(from_backend=chosen_backend, to_backend=fallback)
+            self._log_decision(request_id, "fallback_selected", fallback, {"from_backend": chosen_backend, "stage": "load_shed"})
+            chosen_backend = fallback
+            admission = self.registry.admit(chosen_backend, priority=request.priority, allow_queue=request.priority == "high")
+            queued = admission == "queued"
+            if admission == "shed":
+                self.metrics.record_load_shed(backend=chosen_backend, priority=request.priority, reason="fallback_capacity")
+                return self._reject(
+                    request_id=request_id,
+                    request=request,
+                    policy=policy,
+                    backend=chosen_backend,
+                    chosen_backend=chosen_backend,
+                    final_backend=chosen_backend,
+                    queued=False,
+                    fallback_used=True,
+                    status="rejected",
+                    reason="fallback capacity",
+                    rejection_reason="fallback_capacity",
+                )
+
         if queued:
             self._log_decision(request_id, "queued", chosen_backend, {"priority": request.priority})
             if request.priority == "low":
                 self.registry.release_queue(chosen_backend)
+                self.metrics.record_load_shed(backend=chosen_backend, priority=request.priority, reason="low_priority_queue")
                 return self._reject(
                     request_id=request_id,
                     request=request,
@@ -107,18 +154,18 @@ class Router:
                     fallback_used=False,
                     status="rejected",
                     reason="capacity",
-                    rejection_reason="capacity",
-                )
+                        rejection_reason="capacity",
+                    )
             await asyncio.sleep(0.05)
-            self.registry.release_queue(chosen_backend)
-            if not self.registry.reserve(chosen_backend):
-                self.registry.release_queue(chosen_backend)
+            if not self.registry.promote_queued(chosen_backend):
                 fallback = choose_fallback(
                     failed_backend=chosen_backend,
+                    priority=request.priority,
                     latency_budget_ms=request.latency_budget_ms,
                     registry=self.registry,
                 )
                 if not fallback:
+                    self.metrics.record_load_shed(backend=chosen_backend, priority=request.priority, reason="no_fallback")
                     return self._reject(
                         request_id=request_id,
                         request=request,
@@ -136,8 +183,9 @@ class Router:
                 self.metrics.record_fallback(from_backend=chosen_backend, to_backend=fallback)
                 self._log_decision(request_id, "fallback_selected", fallback, {"from_backend": chosen_backend, "stage": "capacity"})
                 chosen_backend = fallback
-                if not self.registry.reserve(chosen_backend):
-                    self.registry.release_queue(chosen_backend)
+                fallback_admission = self.registry.admit(chosen_backend, priority=request.priority, allow_queue=False)
+                if fallback_admission != "reserved":
+                    self.metrics.record_load_shed(backend=chosen_backend, priority=request.priority, reason="fallback_capacity")
                     return self._reject(
                         request_id=request_id,
                         request=request,
@@ -160,11 +208,19 @@ class Router:
             payload = await self._dispatch(chosen_backend, request)
             latency_ms = (time.perf_counter() - start) * 1000.0
             model_name = payload.get("model", self.registry.get(chosen_backend).model_name)
+            cold_start = bool(payload.get("cold_start"))
             result = payload.get("result", "")
             status = "success"
-            self.registry.record_success(chosen_backend, latency_ms)
+            self.registry.record_success(chosen_backend, latency_ms, cold_start=cold_start)
+            if cold_start:
+                self.metrics.record_cold_start(backend=chosen_backend)
             self.metrics.record_request(policy=policy, priority=request.priority, backend=chosen_backend, status=status, latency_ms=latency_ms)
-            self._log_decision(request_id, "dispatch_success", chosen_backend, {"latency_ms": round(latency_ms, 2), "model_name": model_name})
+            self._log_decision(
+                request_id,
+                "dispatch_success",
+                chosen_backend,
+                {"latency_ms": round(latency_ms, 2), "model_name": model_name, "cold_start": cold_start},
+            )
             return self._build_response(
                 request_id=request_id,
                 backend=chosen_backend,
@@ -181,6 +237,7 @@ class Router:
             self._log_decision(request_id, "dispatch_failed", chosen_backend, {"error": str(exc)})
             fallback = choose_fallback(
                 failed_backend=chosen_backend,
+                priority=request.priority,
                 latency_budget_ms=request.latency_budget_ms,
                 registry=self.registry,
             )
@@ -205,8 +262,8 @@ class Router:
             fallback_used = True
             self.metrics.record_fallback(from_backend=chosen_backend, to_backend=fallback)
             self._log_decision(request_id, "fallback_selected", fallback, {"from_backend": chosen_backend, "stage": "dispatch_failure"})
-            if not self.registry.reserve(fallback):
-                self.registry.release_queue(fallback)
+            if self.registry.admit(fallback, priority=request.priority, allow_queue=False) != "reserved":
+                self.metrics.record_load_shed(backend=fallback, priority=request.priority, reason="fallback_capacity")
                 status = "rejected"
                 reason = "fallback capacity"
                 final_backend = fallback
@@ -250,11 +307,19 @@ class Router:
 
             latency_ms = (time.perf_counter() - start) * 1000.0
             model_name = payload.get("model", self.registry.get(fallback).model_name)
+            cold_start = bool(payload.get("cold_start"))
             result = payload.get("result", "")
             status = "fallback_success"
-            self.registry.record_success(fallback, latency_ms)
+            self.registry.record_success(fallback, latency_ms, cold_start=cold_start)
+            if cold_start:
+                self.metrics.record_cold_start(backend=fallback)
             self.metrics.record_request(policy=policy, priority=request.priority, backend=fallback, status=status, latency_ms=latency_ms)
-            self._log_decision(request_id, "fallback_success", fallback, {"latency_ms": round(latency_ms, 2), "model_name": model_name})
+            self._log_decision(
+                request_id,
+                "fallback_success",
+                fallback,
+                {"latency_ms": round(latency_ms, 2), "model_name": model_name, "cold_start": cold_start},
+            )
             return self._build_response(
                 request_id=request_id,
                 backend=fallback,
@@ -287,7 +352,11 @@ class Router:
             )
 
     async def _dispatch(self, backend: str, request: InferenceRequest) -> dict:
+        cold_start = self.registry.prepare_dispatch(backend)
+        self._refresh_backend_metrics()
         state = self.registry.get(backend)
+        if cold_start and state.cold_start_penalty_ms > 0:
+            await asyncio.sleep(state.cold_start_penalty_ms / 1000.0)
         if state.chaos_extra_latency_ms > 0:
             await asyncio.sleep(state.chaos_extra_latency_ms / 1000.0)
         if state.chaos_error_rate > 0 and random.random() < state.chaos_error_rate:
@@ -317,6 +386,7 @@ class Router:
             "result": choice.strip(),
             "model": payload.get("model", state.model_name),
             "usage": payload.get("usage", {}),
+            "cold_start": cold_start,
         }
 
     def _refresh_backend_metrics(self) -> None:
@@ -326,6 +396,12 @@ class Router:
                 inflight=state.inflight,
                 queue_depth=state.queue_depth,
                 healthy=state.healthy,
+                outstanding_requests=state.outstanding_requests,
+                estimated_wait_ms=state.estimated_wait_ms,
+                warm_state=state.warm_state,
+                residency_state=state.residency_state,
+                current_concurrency=state.max_concurrency,
+                max_concurrency_limit=state.max_concurrency_limit,
             )
 
     def _build_response(

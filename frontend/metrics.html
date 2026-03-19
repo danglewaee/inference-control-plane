@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inference Control Plane Metrics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <p class="eyebrow">Operator metrics</p>
+          <h1>Metrics and History</h1>
+          <p class="lede">
+            This page is intentionally separate from the main demo. Use it to inspect
+            request totals, fallback pressure, rollbacks, and recent routing outcomes.
+          </p>
+        </div>
+        <div class="topbar-links">
+          <a href="/">Live demo</a>
+          <a href="/gallery">Gallery cover</a>
+          <a href="/ops/backends">Backend view</a>
+          <a href="/docs" target="_blank" rel="noreferrer">API Docs</a>
+          <a href="http://localhost:3000" target="_blank" rel="noreferrer">Grafana</a>
+          <a href="http://localhost:9090" target="_blank" rel="noreferrer">Prometheus</a>
+        </div>
+      </header>
+
+      <main class="ops-layout">
+        <section class="panel ops-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-label">System metrics</p>
+              <h2>Live routing pressure and safety signals</h2>
+            </div>
+            <div class="ops-toolbar">
+              <span id="metrics-health-badge" class="badge badge-neutral">Checking health</span>
+              <button id="metrics-refresh-button" class="ghost-button" type="button">Refresh</button>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <article class="metric-card">
+              <span>Total requests</span>
+              <strong id="metrics-requests-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Fallbacks</span>
+              <strong id="metrics-fallback-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Rejected</span>
+              <strong id="metrics-rejected-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Rollbacks</span>
+              <strong id="metrics-rollback-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Load shed</span>
+              <strong id="metrics-load-shed-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Cold starts</span>
+              <strong id="metrics-cold-start-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Autoscale up</span>
+              <strong id="metrics-autoscale-up-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Autoscale down</span>
+              <strong id="metrics-autoscale-down-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Evictions</span>
+              <strong id="metrics-eviction-total">-</strong>
+            </article>
+            <article class="metric-card">
+              <span>Loaded backends</span>
+              <strong id="metrics-loaded-total">-</strong>
+            </article>
+          </div>
+
+          <section class="mini-panel">
+            <div class="mini-panel-head">
+              <h3>Rollout state</h3>
+            </div>
+            <p id="metrics-rollout-summary" class="empty-state">No rollout running.</p>
+          </section>
+        </section>
+
+        <section class="panel ops-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-label">Recent history</p>
+              <h2>Latest routed requests</h2>
+            </div>
+          </div>
+
+          <div id="metrics-history-list" class="history-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/metrics.js"></script>
+  </body>
+</html>

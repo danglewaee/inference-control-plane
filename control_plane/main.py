@@ -48,12 +48,16 @@ async def startup() -> None:
     storage = PersistenceStore(db_path)
     storage.initialize()
 
-    registry = BackendRegistry(storage=storage)
+    registry = BackendRegistry(
+        storage=storage,
+        max_loaded_backends=max(1, int(os.getenv("MAX_LOADED_BACKENDS", "2"))),
+    )
+    configured_backends = _load_backend_records()
     persisted_backends = storage.load_backends()
     if persisted_backends:
-        registry.load_records(persisted_backends)
+        registry.load_records(_merge_backend_records(persisted_backends, configured_backends))
     else:
-        for record in _load_backend_records():
+        for record in configured_backends:
             registry.register_backend(**record)
 
     rollout_state = storage.load_rollout_state() or _default_rollout_state()
@@ -98,6 +102,27 @@ def about():
     if not FRONTEND_DIR.exists():
         raise HTTPException(status_code=404, detail="frontend not available")
     return FileResponse(FRONTEND_DIR / "about.html")
+
+
+@app.get("/gallery", include_in_schema=False)
+def gallery():
+    if not FRONTEND_DIR.exists():
+        raise HTTPException(status_code=404, detail="frontend not available")
+    return FileResponse(FRONTEND_DIR / "gallery.html")
+
+
+@app.get("/ops/metrics", include_in_schema=False)
+def metrics_page():
+    if not FRONTEND_DIR.exists():
+        raise HTTPException(status_code=404, detail="frontend not available")
+    return FileResponse(FRONTEND_DIR / "metrics.html")
+
+
+@app.get("/ops/backends", include_in_schema=False)
+def backends_page():
+    if not FRONTEND_DIR.exists():
+        raise HTTPException(status_code=404, detail="frontend not available")
+    return FileResponse(FRONTEND_DIR / "backends.html")
 
 
 @app.get("/health")
@@ -211,13 +236,20 @@ def prometheus_metrics():
 
 @app.get("/metrics/summary", response_model=MetricsSummary)
 def metrics_summary():
+    snapshots = registry.snapshots()
     return MetricsSummary(
         requests_total=metrics.requests_total,
         rejected_total=metrics.rejected_total,
+        load_shed_total=metrics.load_shed_total,
         fallback_total=metrics.fallback_total,
+        cold_start_total=metrics.cold_start_total,
+        autoscale_up_total=sum(item.autoscale_up_events for item in snapshots),
+        autoscale_down_total=sum(item.autoscale_down_events for item in snapshots),
+        eviction_total=sum(item.evictions for item in snapshots),
+        loaded_backends_total=sum(1 for item in snapshots if item.loaded),
         canary_rollbacks_total=metrics.canary_rollbacks_total,
         rollout=RolloutStatus(**rollout_state),
-        backends=[_to_snapshot(item) for item in registry.snapshots()],
+        backends=[_to_snapshot(item) for item in snapshots],
     )
 
 
@@ -238,7 +270,12 @@ def _load_backend_records() -> list[dict[str, Any]]:
             "model_name": "qwen2.5:0.5b",
             "cost_weight": 0.8,
             "max_concurrency": 4,
+            "max_concurrency_limit": 6,
             "warm_latency_ms": 450.0,
+            "cold_start_penalty_ms": 260.0,
+            "hot_ttl_s": 24.0,
+            "unload_ttl_s": 95.0,
+            "max_queue_depth": 6,
         },
         {
             "name": "llama-balanced",
@@ -247,7 +284,12 @@ def _load_backend_records() -> list[dict[str, Any]]:
             "model_name": "llama3.2:1b",
             "cost_weight": 1.1,
             "max_concurrency": 3,
+            "max_concurrency_limit": 5,
             "warm_latency_ms": 700.0,
+            "cold_start_penalty_ms": 420.0,
+            "hot_ttl_s": 30.0,
+            "unload_ttl_s": 120.0,
+            "max_queue_depth": 5,
         },
         {
             "name": "qwen-quality",
@@ -256,9 +298,36 @@ def _load_backend_records() -> list[dict[str, Any]]:
             "model_name": "qwen2.5:1.5b",
             "cost_weight": 1.7,
             "max_concurrency": 2,
+            "max_concurrency_limit": 4,
             "warm_latency_ms": 1100.0,
+            "cold_start_penalty_ms": 700.0,
+            "hot_ttl_s": 36.0,
+            "unload_ttl_s": 145.0,
+            "max_queue_depth": 4,
         },
     ]
+
+
+def _merge_backend_records(persisted: list[dict[str, Any]], configured: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    configured_by_name = {record["name"]: record for record in configured}
+    merged: list[dict[str, Any]] = []
+    for record in persisted:
+        defaults = configured_by_name.get(record["name"], {})
+        merged_record = {**defaults, **record}
+        if "base_concurrency" not in record:
+            merged_record["base_concurrency"] = defaults.get("max_concurrency", record.get("max_concurrency", 1))
+        if "max_concurrency_limit" not in record and "max_concurrency_limit" in defaults:
+            merged_record["max_concurrency_limit"] = defaults["max_concurrency_limit"]
+        if "hot_ttl_s" not in record and "hot_ttl_s" in defaults:
+            merged_record["hot_ttl_s"] = defaults["hot_ttl_s"]
+        if "unload_ttl_s" not in record and "unload_ttl_s" in defaults:
+            merged_record["unload_ttl_s"] = defaults["unload_ttl_s"]
+        merged.append(merged_record)
+    known_names = {record["name"] for record in merged}
+    for record in configured:
+        if record["name"] not in known_names:
+            merged.append(record)
+    return merged
 
 
 def _to_snapshot(item) -> BackendSnapshot:
@@ -269,12 +338,26 @@ def _to_snapshot(item) -> BackendSnapshot:
         model_name=item.model_name,
         healthy=item.healthy,
         inflight=item.inflight,
+        base_concurrency=item.base_concurrency,
         max_concurrency=item.max_concurrency,
+        max_concurrency_limit=item.max_concurrency_limit,
         queue_depth=item.queue_depth,
         p95_latency_ms=round(item.p95_latency_ms, 2),
         error_rate=round(item.error_rate, 3),
         cost_weight=item.cost_weight,
         warm_latency_ms=round(item.warm_latency_ms, 2),
+        cold_start_penalty_ms=round(item.cold_start_penalty_ms, 2),
+        warm_state=item.warm_state,
+        residency_state=item.residency_state,
+        outstanding_requests=item.outstanding_requests,
+        estimated_wait_ms=round(item.estimated_wait_ms, 2),
+        ewma_latency_ms=round(item.ewma_latency_ms, 2),
+        max_queue_depth=item.effective_queue_limit,
+        cold_starts=item.cold_starts,
+        shed_events=item.shed_events,
+        autoscale_up_events=item.autoscale_up_events,
+        autoscale_down_events=item.autoscale_down_events,
+        evictions=item.evictions,
         version=item.version,
         chaos_extra_latency_ms=item.chaos_extra_latency_ms,
         chaos_error_rate=round(item.chaos_error_rate, 3),

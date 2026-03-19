@@ -19,17 +19,17 @@
           <p class="eyebrow">Self-hosted AI reliability demo</p>
           <h1>Inference Control Plane</h1>
           <p class="lede">
-            When a self-hosted AI app sends every request to one model, users end up
-            waiting longer, hitting timeouts, or seeing failures whenever that model
-            slows down. This control plane routes traffic across multiple Ollama
-            models, falls back automatically, and makes every routing decision visible.
+            When a self-hosted AI app leans on one local model, users feel the lag,
+            retries, and failures first. This demo keeps the main experience simple,
+            while letting operator views live behind a click.
           </p>
         </div>
         <div class="topbar-links">
+          <a href="/gallery">Gallery cover</a>
           <a href="/about">Why this project exists</a>
+          <a href="/ops/metrics">Metrics view</a>
+          <a href="/ops/backends">Backend view</a>
           <a href="/docs" target="_blank" rel="noreferrer">API Docs</a>
-          <a href="http://localhost:3000" target="_blank" rel="noreferrer">Grafana</a>
-          <a href="http://localhost:9090" target="_blank" rel="noreferrer">Prometheus</a>
         </div>
       </header>
 
@@ -38,19 +38,19 @@
           <p class="section-label">Problem in one line</p>
           <h2>Self-hosted AI apps become slow and fragile when every request depends on one model.</h2>
           <p>
-            This demo shows the routing layer that keeps the app responsive when latency,
-            overload, or rollout risk starts to hurt users.
+            The user-facing view stays focused on prompts and responses. Metrics,
+            request history, and backend health now live in separate operator pages.
           </p>
         </div>
         <a class="cta-link" href="/about">Read the full problem breakdown</a>
       </section>
 
-      <main class="dashboard">
+      <main class="dashboard dashboard-compact">
         <section class="panel panel-chat">
           <div class="panel-head">
             <div>
               <p class="section-label">See the routing live</p>
-              <h2>Send a request and watch which model wins</h2>
+              <h2>Send a request and watch the system respond</h2>
             </div>
             <span id="health-badge" class="badge badge-neutral">Checking health</span>
           </div>
@@ -75,7 +75,7 @@
                 name="input"
                 rows="6"
                 maxlength="4000"
-                placeholder="Try a realistic product question and inspect how the control plane routes it."
+                placeholder="Try a realistic product question and inspect how the control plane responds."
                 required
               ></textarea>
             </label>
@@ -98,13 +98,6 @@
                   <option value="latency_aware">Latency aware</option>
                   <option value="cost_aware">Cost aware</option>
                   <option value="round_robin">Round robin</option>
-                </select>
-              </label>
-
-              <label class="input-block">
-                <span>Preferred backend</span>
-                <select id="backend-select" name="preferred_backend">
-                  <option value="">Automatic</option>
                 </select>
               </label>
 
@@ -133,53 +126,35 @@
               </div>
               <div id="response-meta" class="response-meta"></div>
             </div>
-            <pre id="response-body" class="response-body">Submit a prompt to see the chosen backend, latency, fallback behavior, and final output here.</pre>
+            <pre id="response-body" class="response-body">Submit a prompt to see the routed response, latency, and stability outcome here.</pre>
           </section>
         </section>
 
-        <aside class="panel panel-insights">
+        <aside class="panel panel-insights panel-links">
           <div class="panel-head">
             <div>
-              <p class="section-label">Live operating view</p>
-              <h2>Why the app stays stable under load</h2>
+              <p class="section-label">Operator views</p>
+              <h2>Open technical detail only when you need it</h2>
             </div>
-            <button id="refresh-button" class="ghost-button" type="button">Refresh</button>
           </div>
 
-          <div class="metrics-grid" id="metrics-grid">
-            <article class="metric-card">
-              <span>Total requests</span>
-              <strong id="requests-total">-</strong>
-            </article>
-            <article class="metric-card">
-              <span>Fallbacks</span>
-              <strong id="fallback-total">-</strong>
-            </article>
-            <article class="metric-card">
-              <span>Rejected</span>
-              <strong id="rejected-total">-</strong>
-            </article>
-            <article class="metric-card">
-              <span>Rollbacks</span>
-              <strong id="rollback-total">-</strong>
-            </article>
+          <div class="link-stack">
+            <a class="nav-card" href="/gallery">
+              <p class="section-label">Gallery</p>
+              <h3>Minimal cover view</h3>
+              <p>Use the clean live demo page for screenshots, galleries, and quick walkthroughs.</p>
+            </a>
+            <a class="nav-card" href="/ops/metrics">
+              <p class="section-label">Metrics</p>
+              <h3>Metrics and request history</h3>
+              <p>Inspect request totals, fallbacks, rollbacks, and recent routing outcomes.</p>
+            </a>
+            <a class="nav-card" href="/ops/backends">
+              <p class="section-label">Backends</p>
+              <h3>Backend pool and health</h3>
+              <p>Inspect model availability, queue depth, p95 latency, and degradation state.</p>
+            </a>
           </div>
-
-          <section class="mini-panel">
-            <div class="mini-panel-head">
-              <h3>Backends</h3>
-              <span id="backend-count" class="mini-note">0 live</span>
-            </div>
-            <div id="backend-list" class="backend-list"></div>
-          </section>
-
-          <section class="mini-panel">
-            <div class="mini-panel-head">
-              <h3>Recent request history</h3>
-              <span class="mini-note">Latest 6 events</span>
-            </div>
-            <div id="history-list" class="history-list"></div>
-          </section>
         </aside>
       </main>
     </div>

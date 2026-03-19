@@ -54,12 +54,26 @@ class BackendSnapshot(BaseModel):
     model_name: str
     healthy: bool
     inflight: int
+    base_concurrency: int
     max_concurrency: int
+    max_concurrency_limit: int
     queue_depth: int
     p95_latency_ms: float
     error_rate: float
     cost_weight: float
     warm_latency_ms: float
+    cold_start_penalty_ms: float
+    warm_state: str
+    residency_state: str
+    outstanding_requests: int
+    estimated_wait_ms: float
+    ewma_latency_ms: float
+    max_queue_depth: int
+    cold_starts: int
+    shed_events: int
+    autoscale_up_events: int
+    autoscale_down_events: int
+    evictions: int
     version: str
     chaos_extra_latency_ms: int
     chaos_error_rate: float
@@ -95,7 +109,13 @@ class DecisionLogEntry(BaseModel):
 class MetricsSummary(BaseModel):
     requests_total: int
     rejected_total: int
+    load_shed_total: int
     fallback_total: int
+    cold_start_total: int
+    autoscale_up_total: int
+    autoscale_down_total: int
+    eviction_total: int
+    loaded_backends_total: int
     canary_rollbacks_total: int
     rollout: RolloutStatus
     backends: list[BackendSnapshot]
